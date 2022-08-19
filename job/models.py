@@ -62,12 +62,13 @@ class Posting(models.Model):
     POSTING_STATUS_INT = [
         (0, 'Normal'),
         (1, 'Closed'),
+        (2, 'Inactive')
     ]
     title = models.CharField(max_length=16)
     position = models.ForeignKey(Position, on_delete=models.CASCADE, null=True, blank=True)
     posting_company = models.ForeignKey(PostingCompany, on_delete=models.CASCADE, null=True, blank=True)
     posting_id = models.CharField(max_length=32)
-    posting_status = models.PositiveSmallIntegerField(choices=POSTING_STATUS_INT)
+    posting_status = models.PositiveSmallIntegerField(choices=POSTING_STATUS_INT, default=0)
     monthly_min = models.PositiveIntegerField(null=True, blank=True)
     monthly_max = models.PositiveIntegerField(null=True, blank=True)
     salary_months = models.SmallIntegerField(default=12)
