@@ -84,6 +84,9 @@ class Photo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag)
 
+    class Meta:
+        ordering = ['-taken_at',]
+
     def __str__(self):
         return self.file_name
     def get_thumb(self):
@@ -91,6 +94,4 @@ class Photo(models.Model):
     def get_preview(self):
         return OSS_PATH + self.file_name + '!' + PREVIEW_SUFFIX
     def get_original(self):
-        return OSS_PATH + self.file_name + '!' + LARGE_SUFFIX
-    def get_url(self):
         return OSS_PATH + self.file_name + '!' + LARGE_SUFFIX
