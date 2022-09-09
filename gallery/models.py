@@ -1,6 +1,11 @@
 from django.db import models
+import os, re
+from PIL import Image
+from PIL.ExifTags import TAGS
+from django.utils import timezone
 
 OSS_PATH = 'https://images.guansong.wang'
+OSS_LOCAL_DIR = '/home/butters/Photos'
 THUMB_SUFFIX = 'small'
 LARGE_SUFFIX = 'original'
 PREVIEW_SUFFIX = 'medium'
@@ -25,7 +30,7 @@ class Location(models.Model):
         return self.location
 
 class Directory(models.Model):
-    dir_path = models.CharField(max_length=128)
+    dir_path = models.CharField(max_length=128, unique=True)
     first_path = models.CharField(max_length=16)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -36,12 +41,23 @@ class Directory(models.Model):
 
     def __str__(self):
         return self.dir_path
-
+    def get_local_path(self):
+        return os.path.join(OSS_LOCAL_DIR, self.first_path, self.dir_path)
+    def get_file_set(self):
+        file_set = set()
+        for (base_dir, dir_list, file_list) in os.walk(self.get_local_path()):
+            for file_name in file_list:
+                if file_name.lower().endswith(('jpg', 'png', 'jpeg')):
+                    file_set.add(os.path.relpath(
+                        os.path.join(base_dir, file_name), OSS_LOCAL_DIR))
+        return file_set
+    
 class Tag(models.Model):
     TAG_TYPE_CHOICES = (
         (1, 'Normal'),
         (2, 'Collection'),
         (3, 'Name'),
+        (4, 'POI'),
     )
     tag = models.CharField(max_length=128, unique=True)
     tag_type = models.SmallIntegerField(choices=TAG_TYPE_CHOICES, default=0)
@@ -71,9 +87,9 @@ class TagRelation(models.Model):
 
 class Photo(models.Model):
     directory = models.ForeignKey(Directory, on_delete=models.CASCADE)
-    file_name = models.CharField(max_length=128)
+    file_name = models.CharField(max_length=128, unique=True)
     taken_at = models.DateTimeField(null=True, blank=True)
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, default=0)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True)
     title_en = models.CharField(max_length=128, blank=True)
     title_zh = models.CharField(max_length=128, blank=True)
     desc_en = models.TextField(blank=True)
@@ -95,3 +111,45 @@ class Photo(models.Model):
         return OSS_PATH + self.file_name + '!' + PREVIEW_SUFFIX
     def get_original(self):
         return OSS_PATH + self.file_name + '!' + LARGE_SUFFIX
+    # SHOULD USE os.path.join BUT file_name IS ABSOLULTE PATH
+    def get_local_path(self):
+        return OSS_LOCAL_DIR + self.file_name
+    def get_exif(self):
+        image_file_path = self.get_local_path()
+        exif_table = {}
+        image = Image.open(image_file_path)
+        info = image.getexif()
+        for tag, value in info.items():
+            decoded = TAGS.get(tag, tag)
+            exif_table[decoded] = value
+        return exif_table
+    def guess_datetime(self):
+        if 'DateTime' in self.get_exif():
+            exif_datetime = timezone.make_aware(
+                timezone.datetime.strptime(
+                    self.get_exif()['DateTime'],
+                    '%Y:%m:%d %H:%M:%S'
+            ))
+            return exif_datetime
+        
+        # IMG_20220525_071800.jpg
+        datetime_re = re.search('(19|20)\d{2}\d{4}_\d{6}',
+                                os.path.basename(self.file_name))
+        if datetime_re:
+            exif_datetime = timezone.make_aware(
+                timezone.datetime.strptime(
+                    datetime_re.group(),
+                    '%Y:%m:%d_%H:%M:%S'
+            ))
+            return exif_datetime
+        
+        # mmexport1653230143700.jpg
+        timestamp_re = re.search('\d{13}', os.path.basename(self.file_name))
+        if timestamp_re:
+            exif_datetime = timezone.make_aware(
+                timezone.datetime.fromtimestamp(
+                    float(timestamp_re.group()) / 1000
+            ))
+            return exif_datetime
+
+        return
