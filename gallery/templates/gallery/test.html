@@ -1,0 +1,13 @@
+<form method="get">
+    {{ filter.form.as_p }}
+    <input type="submit" />
+</form>
+{% if filter.qs %}
+    <ul>
+    {% for image in filter.qs %}
+        <li><img src='{{ image.get_thumb }}' /></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No Image are available.</p>
+{% endif %}
