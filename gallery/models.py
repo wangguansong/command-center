@@ -4,8 +4,8 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from django.utils import timezone
 
-OSS_PATH = 'https://images.guansong.wang'
-OSS_LOCAL_DIR = '/home/butters/Photos'
+OSS_PATH = 'https://images.guansong.wang/'
+OSS_LOCAL_DIR = '/home/butters/Photos/'
 THUMB_SUFFIX = 'small'
 LARGE_SUFFIX = 'original'
 PREVIEW_SUFFIX = 'medium'
@@ -43,14 +43,29 @@ class Directory(models.Model):
         return self.dir_path
     def get_local_path(self):
         return os.path.join(OSS_LOCAL_DIR, self.first_path, self.dir_path)
-    def get_file_set(self):
+    def get_oss_file(self, increment=False):
         file_set = set()
-        for (base_dir, dir_list, file_list) in os.walk(self.get_local_path()):
+        for (base_dir, _, file_list) in os.walk(self.get_local_path()):
             for file_name in file_list:
                 if file_name.lower().endswith(('jpg', 'png', 'jpeg')):
                     file_set.add(os.path.relpath(
                         os.path.join(base_dir, file_name), OSS_LOCAL_DIR))
+        if increment:
+            db_file_set = set([ photo.file_name for photo in self.photo_set.all() ])
+            file_set = file_set - db_file_set
         return file_set
+    def add_new_files(self, init_location=None, init_tags=None):
+        new_files = self.get_oss_file(increment=True)
+        for file_name in new_files:
+            new_image = Photo(file_name = file_name,
+                              directory = self)
+            new_image.taken_at = new_image.guess_datetime()
+            new_image.hidden = True if 'Private/' in file_name else False
+            if init_location: new_image.location = init_location
+            if init_tags: new_image.tags = init_tags
+            new_image.save()
+
+        return 
     
 class Tag(models.Model):
     TAG_TYPE_CHOICES = (
@@ -89,7 +104,7 @@ class Photo(models.Model):
     directory = models.ForeignKey(Directory, on_delete=models.CASCADE)
     file_name = models.CharField(max_length=128, unique=True)
     taken_at = models.DateTimeField(null=True, blank=True)
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True, null=True)
     title_en = models.CharField(max_length=128, blank=True)
     title_zh = models.CharField(max_length=128, blank=True)
     desc_en = models.TextField(blank=True)
@@ -113,7 +128,7 @@ class Photo(models.Model):
         return OSS_PATH + self.file_name + '!' + LARGE_SUFFIX
     # SHOULD USE os.path.join BUT file_name IS ABSOLULTE PATH
     def get_local_path(self):
-        return OSS_LOCAL_DIR + self.file_name
+        return os.path.join(OSS_LOCAL_DIR, self.file_name)
     def get_exif(self):
         image_file_path = self.get_local_path()
         exif_table = {}

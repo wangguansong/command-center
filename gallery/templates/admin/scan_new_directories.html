@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n admin_urls static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+    <script src="{% static 'admin/js/cancel.js' %}" async></script>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} delete-confirmation delete-selected-confirmation{% endblock %}
+
+{% block content %}
+Are you sure you want to execute this action ?
+
+    <ul>
+    {% for new_dir in new_list %}
+        <li>{{ new_dir }}</li>
+    {% endfor %}
+    </ul>
+
+{% endblock %}

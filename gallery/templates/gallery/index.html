@@ -1,9 +1,26 @@
+<html>
+<head>
+    <title>test</title>
+<script src="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/simplelightbox/2.10.2/simple-lightbox.min.js" type="application/javascript"></script>
+<link href="https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/simplelightbox/2.10.2/simple-lightbox.min.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+
 {% if image_list %}
-    <ul>
+<div class="gallery">
     {% for image in image_list %}
-        <li><img src='{{ image.get_thumb }}' /></li>
+        <a href="{{ image.get_original }}"><img src='{{ image.get_thumb }}'  alt="" title="Beautiful Image" /></a>
     {% endfor %}
-    </ul>
+</div>
+<script>
+    (function() {
+        var $gallery = new SimpleLightbox('.gallery a', {'fileExt': false});
+    })();
+</script>
 {% else %}
     <p>No Image are available.</p>
 {% endif %}
+
+</body>
+</html>

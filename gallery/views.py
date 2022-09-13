@@ -20,7 +20,7 @@ class IndexView(generic.ListView):
         return Photo.objects.filter(hidden=False, favorite=True).order_by('-taken_at')[:5]
 
 def FilterView(request):
-    f = PhotoFilter(request.GET, queryset=Photo.objects.all())
+    f = PhotoFilter(request.GET, queryset=Photo.objects.filter(hidden=False))
     return render(request, 'gallery/test.html', {'filter': f})
 
 def index(request):
