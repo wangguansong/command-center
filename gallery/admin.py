@@ -85,8 +85,16 @@ class PhotoAdmin(admin.ModelAdmin):
         form = PhotoSetLocationForm()
 
         if 'location' in request.POST:
-            # validate and save
-            pass
+            location_id = int(request.POST.get('location'))
+            if (location_id > 0):
+                queryset.update(location=location_id)
+
+            self.message_user(
+                request,
+                'Successfully changed location of * photos to xxx.',
+                messages.SUCCESS,
+            )
+            return HttpResponseRedirect(request.get_full_path())
         else:
             form = PhotoSetLocationForm()
         #app_label = opts.app_label
@@ -113,7 +121,6 @@ class PhotoAdmin(admin.ModelAdmin):
                 fields = ['tags']
 
         if 'tags' in request.POST:
-            # validate and save
             selected_tags = request.POST.getlist('tags')
             for photo in queryset:
                 photo.tags.add(*selected_tags)
