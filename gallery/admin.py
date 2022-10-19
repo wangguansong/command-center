@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.http import HttpResponseRedirect
 from django.utils.html import format_html
 from django.shortcuts import render
+from django import forms
 from .models import Location, Tag, Photo, TagRelation, Directory
 from .handler import get_oss_directories
 
@@ -11,10 +13,12 @@ admin.site.register(Location)
 
 @admin.register(Directory)
 class DirectoryAdmin(admin.ModelAdmin):
-    actions = ['scan_directories']
+    actions = [
+        'scan_directories',
+    ]
 
 # https://www.willandskill.se/en/articles/custom-django-admin-actions-with-an-intermediate-page
-    @admin.action(description='Scan for new Directories')
+    @admin.action(description='Scan for New Directories')
     def scan_directories(self, request, queryset):
         full_list = get_oss_directories()
         db_list = set([ (dir.first_path, dir.dir_path)
@@ -31,7 +35,6 @@ class DirectoryAdmin(admin.ModelAdmin):
         return render(request,
                       'admin/scan_new_directories.html',
                       context=context)
-
 
 class TagRelationInline(admin.TabularInline):
     model = TagRelation
@@ -63,3 +66,48 @@ class PhotoAdmin(admin.ModelAdmin):
     )
     def thumb_image(self, obj):
         return format_html("<img src='{}' />".format(obj.get_thumb()))
+
+    actions = [
+        'set_location',
+        'add_tags',
+        'remove_tags',
+    ]
+
+    @admin.action(description='Set Location')
+    def set_location(self, request, queryset):
+
+        class PhotoSetLocationForm(forms.ModelForm):
+            class Meta:
+                model = Photo
+                fields = ['location']
+
+        form = PhotoSetLocationForm()
+
+        if 'location' in request.POST:
+            # validate and save
+            pass
+        else:
+            form = PhotoSetLocationForm()
+        #app_label = opts.app_label
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": 'Set Photo Location',
+            "subtitle": None,
+            "photos": queryset,
+            "media": self.media,
+            "opts": self.model._meta,
+            "form": form,
+        }
+        return render(request,
+                      'admin/photo_set_location.html',
+                      context=context)
+
+
+    @admin.action(description='Add Tags')
+    def add_tags(self, request, queryset):
+        pass
+
+    @admin.action(description='Remove Tags')
+    def remove_tags(self, request, queryset):
+        pass
