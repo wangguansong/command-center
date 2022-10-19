@@ -1,6 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
+from django.utils.translation import ngettext
 from django.shortcuts import render
 from django import forms
 from .models import Location, Tag, Photo, TagRelation, Directory
@@ -106,7 +107,38 @@ class PhotoAdmin(admin.ModelAdmin):
 
     @admin.action(description='Add Tags')
     def add_tags(self, request, queryset):
-        pass
+        class PhotoAddTagsForm(forms.ModelForm):
+            class Meta:
+                model = Photo
+                fields = ['tags']
+
+        if 'tags' in request.POST:
+            # validate and save
+            selected_tags = request.POST.getlist('tags')
+            for photo in queryset:
+                photo.tags.add(*selected_tags)
+
+            self.message_user(
+                request,
+                'Successfully added * tags to * photos.',
+                messages.SUCCESS,
+            )
+
+            return HttpResponseRedirect(request.get_full_path())
+        else:
+            form = PhotoAddTagsForm()
+ 
+        context = {
+            **self.admin_site.each_context(request),
+            "title": 'Add Common Tags',
+            "subtitle": None,
+            "photos": queryset,
+            "opts": self.model._meta,
+            "form": form,
+        }
+        return render(request,
+                      'admin/photo_add_tags.html',
+                      context=context)
 
     @admin.action(description='Remove Tags')
     def remove_tags(self, request, queryset):
