@@ -50,7 +50,7 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Photo)
 class PhotoAdmin(admin.ModelAdmin):
     date_hierarchy = 'taken_at'
-    list_display = ['thumb_image', 'taken_at', 'location', 'title_en', 'title_zh']
+    list_display = ['thumb_image', 'taken_at', 'location', 'title_en', 'title_zh', 'tags_list']
     list_filter = ['taken_at', 'hidden', 'directory__dir_path', ]
     filter_horizontal = ['tags']
     readonly_fields = ['file_name', 'thumb_image']
@@ -67,6 +67,8 @@ class PhotoAdmin(admin.ModelAdmin):
     )
     def thumb_image(self, obj):
         return format_html("<img src='{}' />".format(obj.get_thumb()))
+    def tags_list(self, obj):
+        return format_html("<p>{}</p>".format(', '.join([t.tag for t in obj.tags.all()])))
 
     actions = [
         'set_location',
