@@ -51,7 +51,7 @@ class TagAdmin(admin.ModelAdmin):
 class PhotoAdmin(admin.ModelAdmin):
     date_hierarchy = 'taken_at'
     list_display = ['thumb_image', 'taken_at', 'location', 'title_en', 'title_zh']
-    list_filter = ['directory__dir_path', 'taken_at', ]
+    list_filter = ['taken_at', 'hidden', 'directory__dir_path', ]
     filter_horizontal = ['tags']
     readonly_fields = ['file_name', 'thumb_image']
     fieldsets = (
