@@ -53,10 +53,10 @@ class PhotoAdmin(admin.ModelAdmin):
     list_display = ['thumb_image', 'taken_at', 'location', 'title_en', 'title_zh', 'tags_list']
     list_filter = ['taken_at', 'hidden', 'directory__dir_path', ]
     filter_horizontal = ['tags']
-    readonly_fields = ['file_name', 'thumb_image']
+    readonly_fields = ['file_name', 'thumb_image_with_link']
     fieldsets = (
         (None, {
-            'fields': ('thumb_image', 'file_name', 'taken_at', 'location')
+            'fields': ('thumb_image_with_link', 'file_name', 'taken_at', 'location')
         }),
         ('Information', {
             'fields': ('title_en', 'title_zh', 'desc_en', 'desc_zh')
@@ -66,7 +66,12 @@ class PhotoAdmin(admin.ModelAdmin):
         })
     )
     def thumb_image(self, obj):
-        return format_html("<img src='{}' />".format(obj.get_thumb()))
+        return format_html("<img src='{thumb_url}' />".format(
+            thumb_url = obj.get_thumb()))
+    def thumb_image_with_link(self, obj):
+        return format_html("<a href='{large_url}' target='_blank'><img src='{thumb_url}' /></a>".format(
+            large_url = obj.get_original(),
+            thumb_url = obj.get_preview()))
     def tags_list(self, obj):
         return format_html("<p>{}</p>".format(', '.join([t.tag for t in obj.tags.all()])))
 
