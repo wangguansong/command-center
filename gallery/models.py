@@ -154,7 +154,7 @@ class Photo(models.Model):
             exif_datetime = timezone.make_aware(
                 timezone.datetime.strptime(
                     datetime_re.group(),
-                    '%Y:%m:%d_%H:%M:%S'
+                    '%Y%m%d_%H%M%S'
             ))
             return exif_datetime
         
